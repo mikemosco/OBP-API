@@ -152,6 +152,16 @@ import scala.concurrent.ExecutionContext
  * to modify lift's environment
  */
 class Boot extends MdcLoggable {
+  def configureMailer() {
+    if (!APIUtil.getPropsValue("mail.user", "").isEmpty) {
+      Mailer.authenticator = for {
+        user <- APIUtil.getPropsValue("mail.user")
+        pass <- APIUtil.getPropsValue("mail.password")
+      } yield new Authenticator {
+        override def getPasswordAuthentication = new PasswordAuthentication(user, pass)
+      }
+    }
+  }
 
   /**
    * For the project scope, most early initiate logic should in this method.
@@ -221,6 +231,8 @@ class Boot extends MdcLoggable {
 
 
   def boot {
+    configureMailer()
+
     // set up the way to connect to the relational DB we're using (ok if other connector than relational)
     if (!DB.jndiJdbcConnAvailable_?) {
       val driver =
